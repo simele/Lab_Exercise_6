@@ -10,8 +10,17 @@ const reloadIcon = document.querySelector('.fa'); //the reload button at the top
 //DB variable 
 
 let DB;
+let isSorted = true;
 
+// Event Listener for reload 
+reloadIcon.addEventListener('click', reloadPage);
 
+// Reload Page Function 
+function reloadPage() {
+    //using the reload fun on location object 
+    location.reload();
+}
+form.addEventListener('submit', addNewTask);
 
 // Add Event Listener [on Load]
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,13 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let TasksDB = indexedDB.open('tasks', 1);
 
     // if there's an error
-    TasksDB.onerror = function() {
+    TasksDB.onerror = function(event) {
             console.log('There was an error');
         }
         // if everything is fine, assign the result to the instance
-    TasksDB.onsuccess = function() {
+    TasksDB.onsuccess = function(event) {
         // console.log('Database Ready');
-
+        console.log('Database Ready');
+        DB = TasksDB.result;
+        displayTaskList();
         // save the result
         DB = TasksDB.result;
 
@@ -85,8 +96,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
     }
+sorting.addEventListener("change", order);
+function order(e){
+    isSorted = !isSorted;
+    displayTaskList(e)
+}
 
-    function displayTaskList() {
+function displayTaskList(e) {
         // clear the previous task list
         while (taskList.firstChild) {
             taskList.removeChild(taskList.firstChild);
@@ -94,7 +110,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // create the object store
         let objectStore = DB.transaction('tasks').objectStore('tasks');
-
+        let param1;
+        let param2;
+        if(isSorted){
+            param1 = null;
+            parama2 = 'next';
+        }
+        else{
+            param1 = null;
+            parama2 = 'prev'
+        }
         objectStore.openCursor().onsuccess = function(e) {
             // assign the current cursor
             let cursor = e.target.result;
@@ -163,6 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         displayTaskList();
         console.log("Tasks Cleared !!!");
     }
-
+taskList.addEventListener('click', removeTask);
 
 });
