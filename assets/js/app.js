@@ -4,23 +4,16 @@ const form = document.querySelector('#task-form'); //The form at the top
 const filter = document.querySelector('#filter'); //the task filter text field
 const taskList = document.querySelector('.collection'); //The UL
 const clearBtn = document.querySelector('.clear-tasks'); //the all task clear button
-const sorting = document.querySelector('#sorting');
+let sort = document.querySelector('#order'); //the task filter text field
 const reloadIcon = document.querySelector('.fa'); //the reload button at the top navigation 
+
+
 
 //DB variable 
 
 let DB;
-let isSorted = true;
 
-// Event Listener for reload 
-reloadIcon.addEventListener('click', reloadPage);
 
-// Reload Page Function 
-function reloadPage() {
-    //using the reload fun on location object 
-    location.reload();
-}
-form.addEventListener('submit', addNewTask);
 
 // Add Event Listener [on Load]
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,17 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let TasksDB = indexedDB.open('tasks', 1);
 
     // if there's an error
-    TasksDB.onerror = function(event) {
+    TasksDB.onerror = function() {
             console.log('There was an error');
         }
         // if everything is fine, assign the result to the instance
-    TasksDB.onsuccess = function(event) {
+    TasksDB.onsuccess = function() {
         // console.log('Database Ready');
-        console.log('Database Ready');
-        DB = TasksDB.result;
-        displayTaskList();
+
         // save the result
         DB = TasksDB.result;
+        
 
         // display the Task List 
         displayTaskList();
@@ -55,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // createindex: 1) field name 2) keypath 3) options
         objectStore.createIndex('taskname', 'taskname', { unique: false });
+        objectStore.createIndex('date', 'date', { unique: false });
 
         console.log('Database ready and fields created!');
     }
@@ -74,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // create a new object with the form info
         let newTask = {
             taskname: taskInput.value,
+            date: new Date().getTime(),
         }
 
         // Insert the object into the database 
@@ -96,13 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
     }
-sorting.addEventListener("change", order);
-function order(e){
-    isSorted = !isSorted;
-    displayTaskList(e)
-}
-
-function displayTaskList(e) {
+    sort.addEventListener('change', displayTaskList)
+    function displayTaskList() {
         // clear the previous task list
         while (taskList.firstChild) {
             taskList.removeChild(taskList.firstChild);
@@ -110,17 +99,15 @@ function displayTaskList(e) {
 
         // create the object store
         let objectStore = DB.transaction('tasks').objectStore('tasks');
-        let param1;
-        let param2;
-        if(isSorted){
-            param1 = null;
-            parama2 = 'next';
+        let sort_order = ''
+
+        if (sort.value == 'ascend') {
+            sort_order = "next"
+        } else {
+            sort_order = "prev"
         }
-        else{
-            param1 = null;
-            parama2 = 'prev'
-        }
-        objectStore.openCursor().onsuccess = function(e) {
+        let index = objectStore.index("date");
+        index.openCursor(null, sort_order).onsuccess = function(e) {
             // assign the current cursor
             let cursor = e.target.result;
 
@@ -141,8 +128,9 @@ function displayTaskList(e) {
                 link.innerHTML = `
                  <i class="fa fa-remove"></i>
                 &nbsp;
-                <a href="/Lesson 04 [Lab 06]/Finished/edit.html?id=${cursor.value.id}"><i class="fa fa-edit"></i> </a>
+                <a href="edit.html?id=${cursor.value.id}"><i class="fa fa-edit"></i> </a>
                 `;
+                li.dataset.date = cursor.value.date;
                 // Append link to li
                 li.appendChild(link);
                 // Append to UL 
@@ -188,6 +176,6 @@ function displayTaskList(e) {
         displayTaskList();
         console.log("Tasks Cleared !!!");
     }
-taskList.addEventListener('click', removeTask);
+
 
 });
